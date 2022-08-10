@@ -120,8 +120,7 @@ def aspp(x,input_shape,out_stride):
 	b3=Activation("relu")(b3)
 	
 	out_shape=int(input_shape[0]/out_stride)
-	print("out_shape:")
-	print(out_shape)
+	print("\noutput_shape: {} \n".format(out_shape))
 	b4=AveragePooling2D(pool_size=(out_shape,out_shape))(x)
 
 	b4=Conv2D(256,(1,1),padding="same",use_bias=False)(b4)
@@ -134,7 +133,8 @@ def aspp(x,input_shape,out_stride):
 def deeplabv3_plus(input_shape=(96,96,1),out_stride=16,num_classes=30):
 	
 	img_input2=Input(shape=input_shape) # OG
-	print(input_shape[0], input_shape[1],input_shape[2]) # not OG
+	print("input shape is the following: {} {} {}".format(input_shape[0], input_shape[1],input_shape[2]))
+	#print(input_shape[0], input_shape[1],input_shape[2]) # not OG
 	img_input = tf.compat.v1.placeholder(tf.float32, shape=[None, input_shape[0], input_shape[1],input_shape[2]]) # Not OG
 
 	
@@ -244,10 +244,13 @@ def deeplabv3_plus(input_shape=(96,96,1),out_stride=16,num_classes=30):
 	
 	
 	norm_heatmap, coords = dsnt(x)
-    print("\n")
-	print("shape of normalized heatmap {}".format(norm_heatmap.shape))
-	print("shape of coordinates {}".format (coords.shape))
-	print("\n")
+	
+	
+    
+	print("\nshape of normalized heatmap {}".format(norm_heatmap.shape))
+	print("\nshape of coordinates {}".format (coords.shape))
+    
+
 		
 	# model=Model(img_input,x)
 	# print(type(model))

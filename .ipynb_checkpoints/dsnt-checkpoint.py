@@ -24,31 +24,31 @@ def dsnt(inputs, method='softmax'):
     width = tf.shape(norm_heatmap)[2]
 
 	# test
-    print(tf.range(1,width+1))
+    # print(tf.range(1,width+1))
     
 
     # Build the DSNT x, y matrices
     dsnt_x = tf.tile([[(2 * tf.range(1, width+1) - (width + 1)) / width]], [batch_count, height, 1])
-    print("dsntx")
-    print(dsnt_x.shape)
-
+    print("\ndsnt x {}".format(dsnt_x.shape))
+	
     dsnt_x = tf.cast(dsnt_x, tf.float32)
-    print("newdsntx")
-    print(dsnt_x.shape)
+    print("\nnew dsnt x {}".format(dsnt_x.shape))
+	
     dsnt_y = tf.tile([[(2 * tf.range(1, height+1) - (height + 1)) / height]], [batch_count, width, 1])
-    print("dsnty")
-    print(dsnt_y.shape)
+    print("\ndsnt y {}".format(dsnt_y.shape))
+
     dsnt_y = tf.cast(tf.transpose(dsnt_y, perm=[0, 2, 1]), tf.float32)
-    print("newdsnty")
-    print(dsnt_y.shape)
+    print("\nnew dsnt y {}".format(dsnt_y.shape))
+	
     # Compute the Frobenius inner product
     outputs_x = tf.reduce_sum(tf.multiply(norm_heatmap, dsnt_x), axis=[1, 2])
     outputs_y = tf.reduce_sum(tf.multiply(norm_heatmap, dsnt_y), axis=[1, 2])
-    print("outputx {}".format(outputs_x.shape))
-    print("outputBeforeReduce {}".format((tf.multiply(norm_heatmap, dsnt_x)).shape))
+    print("\noutput x {}".format(outputs_x.shape))
+    print("\noutputBeforeReduceSum {}".format((tf.multiply(norm_heatmap, dsnt_x)).shape))
+
     # Zip into [x, y] pairs
     coords_zipped = tf.stack([outputs_x, outputs_y], axis=1)
-    print("coordszipped is {}".format(coords_zipped.shape))
+    print("\ncoords_zipped is {}".format(coords_zipped.shape))
 
     return norm_heatmap, coords_zipped
 
