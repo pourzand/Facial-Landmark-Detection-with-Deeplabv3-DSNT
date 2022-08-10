@@ -1,4 +1,4 @@
-# Facial Landmark Detection with Deeplabv3 DSNT
+# Facial Landmark Detection with Deeplabv3 & DSNT
 Seena Pourzand
 
 Attempt at utilizing the DeeplabV3+ FCN Architecture(implementation courtesy of [mjDelta](https://github.com/mjDelta/deeplabv3plus-keras/blob/master/deeplabv3plus.py)) and DSNT Layer(implementation courtesy of [ashwhall](https://github.com/ashwhall/dsnt)) 
