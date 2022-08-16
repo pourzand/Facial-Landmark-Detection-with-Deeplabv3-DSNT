@@ -236,7 +236,7 @@ def deeplabv3_plus(input_shape=(96,96,1),out_stride=16,num_classes=15):
 	
 	x=Conv2D(num_classes,(1,1),padding="same")(x)
 	x=BilinearUpsampling((4,4))(x)
-	x = Activation("sigmoid")(x)
+	x = Activation("sigmoid",name='last')(x)
 	
 	print("----------------")
 	print("final shape of deeplab model {}".format(x.shape))

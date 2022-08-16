@@ -130,7 +130,7 @@ def aspp(x,input_shape,out_stride):
 	
 	x=Concatenate()([b4,b0,b1,b2,b3])
 	return x
-def deeplabv3_plus(input_shape=(96,96,1),out_stride=16,num_classes=30):
+def deeplabv3_plus(input_shape=(96,96,1),out_stride=16,num_classes=15):
 	
 	img_input=Input(shape=input_shape) # OG
 	print("input shape is the following: {} {} {}".format(input_shape[0], input_shape[1],input_shape[2]))
@@ -236,7 +236,7 @@ def deeplabv3_plus(input_shape=(96,96,1),out_stride=16,num_classes=30):
 	
 	x=Conv2D(num_classes,(1,1),padding="same")(x)
 	x=BilinearUpsampling((4,4))(x)
-	x = Activation("sigmoid")(x)
+	x = Activation("sigmoid",name='last')(x)
 	
 	print("----------------")
 	print("final shape of deeplab model {}".format(x.shape))

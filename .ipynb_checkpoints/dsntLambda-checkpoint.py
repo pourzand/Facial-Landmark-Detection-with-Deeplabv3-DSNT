@@ -5,16 +5,21 @@ Regression with Convolutional Neural Networks"
 
 import tensorflow as tf
 
-def dsnt(inputs, method='softmax'):
+def dsnt(inputs, method='softmax', output_range='0to1'):
     '''
     Differentiable Spatial to Numerical Transform, as taken from the paper "Numerical Coordinate
     Regression with Convolutional Neural Networks"
     Arguments: 
-        inputs - The learnt heatmap. A 3d tensor of shape [batch, height, width]
+        inputs - The learnt heatmap. A 4d tensor of shape [batch, height, width, channels]
         method - A string representing the normalisation method. See `_normalise_heatmap` for available methods
+        output_range - output range for x,y. please choose "0to1" (inclusive range) or "-1to1" (exclusive range)
+            The paper chooses "-1to1" range which includes only numbers between -1 to 1, but exclude -1 and 1.
     Returns:
         norm_heatmap - The given heatmap with normalisation/rectification applied
-        coords_zipped - A tensor of shape [batch, 2] containing the [x, y] coordinate pairs
+        coords_zipped - A tensor of shape [batch, channels, 2] containing the [x, y] coordinate pairs for each heatmap
+    Example:
+        Usage as a Keras layer (ignoring heatmap): `keras.layers.Lambda(lambda x: dsnt.dsnt(x, 'softmax')[1])`
+        Should directly follow a Conv2D layer with linear activation.
     '''
     # Rectify and reshape inputs
     norm_heatmap = _normalise_heatmap(inputs, method)
@@ -22,33 +27,29 @@ def dsnt(inputs, method='softmax'):
     batch_count = tf.shape(norm_heatmap)[0]
     height = tf.shape(norm_heatmap)[1]
     width = tf.shape(norm_heatmap)[2]
+    channels = norm_heatmap.shape[3]
 
-	# test
-    # print(tf.range(1,width+1))
-    
+    if output_range == '0to1':
+        gen_range = lambda length: tf.range(length) / (length-1)
+    elif output_range == '-1to1':
+        gen_range = lambda length: (2 * tf.range(1, length+1) - (length+1)) / length
+    else:
+        raise ValueError("Unknown output_range: " + str(output_range))
 
     # Build the DSNT x, y matrices
-    dsnt_x = tf.tile([[(2 * tf.range(1, width+1) - (width + 1)) / width]], [batch_count, height, 1])
-    print("\ndsnt x {}".format(dsnt_x.shape))
-	
+    dsnt_x = tf.reshape(gen_range(width), [1, 1, -1, 1])
+    dsnt_x = tf.tile(dsnt_x, [batch_count, height, 1, channels])
     dsnt_x = tf.cast(dsnt_x, tf.float32)
-    print("\nnew dsnt x {}".format(dsnt_x.shape))
-	
-    dsnt_y = tf.tile([[(2 * tf.range(1, height+1) - (height + 1)) / height]], [batch_count, width, 1])
-    print("\ndsnt y {}".format(dsnt_y.shape))
+    dsnt_y = tf.reshape(gen_range(height), [1, -1, 1, 1])
+    dsnt_y = tf.tile(dsnt_y, [batch_count, 1, width, channels])
+    dsnt_y = tf.cast(dsnt_y, tf.float32)
 
-    dsnt_y = tf.cast(tf.transpose(dsnt_y, perm=[0, 2, 1]), tf.float32)
-    print("\nnew dsnt y {}".format(dsnt_y.shape))
-	
     # Compute the Frobenius inner product
     outputs_x = tf.reduce_sum(tf.multiply(norm_heatmap, dsnt_x), axis=[1, 2])
     outputs_y = tf.reduce_sum(tf.multiply(norm_heatmap, dsnt_y), axis=[1, 2])
-    print("\noutput x {}".format(outputs_x.shape))
-    print("\noutputBeforeReduceSum {}".format((tf.multiply(norm_heatmap, dsnt_x)).shape))
 
     # Zip into [x, y] pairs
-    coords_zipped = tf.stack([outputs_x, outputs_y], axis=1)
-    print("\ncoords_zipped is {}".format(coords_zipped.shape))
+    coords_zipped = tf.stack([outputs_x, outputs_y], axis=-1)
 
     return norm_heatmap, coords_zipped
 
@@ -69,14 +70,14 @@ def _normalise_heatmap(inputs, method='softmax'):
     '''
     Applies the chosen normalisation/rectification method to the input tensor
     Arguments:
-        inputs - A 4d tensor of shape [batch, height, width, 1] (the learnt heatmap)
+        inputs - A 4d tensor of shape [batch, height, width, channels] (the learnt heatmap)
         method - A string representing the normalisation method. One of those shown below
     '''
     # Remove the final dimension as it's of size 1
-    inputs = tf.reshape(inputs, tf.shape(inputs)[:3])
+#     inputs = tf.reshape(inputs, tf.shape(inputs)[:3])
 
     # Normalise the values such that the values sum to one for each heatmap
-    normalise = lambda x: tf.div(x, tf.reshape(tf.reduce_sum(x, [1, 2]), [-1, 1, 1]))
+    normalise = lambda x: tf.divide(x, tf.reduce_sum(x, axis=[1, 2], keepdims=True))
 
     # Perform rectification
     if method == 'softmax':
@@ -96,7 +97,7 @@ def _normalise_heatmap(inputs, method='softmax'):
     return inputs
 
 def _kl_2d(p, q, eps=24):
-    unsummed_kl = p * (tf.compat.v1.log(p + eps) - tf.compat.v1.log(q + eps))
+    unsummed_kl = p * (tf.log(p + eps) - tf.log(q + eps))
     kl_values = tf.reduce_sum(unsummed_kl, [-1, -2])
     return kl_values
 
@@ -136,7 +137,7 @@ def _make_gaussian(size, centre, fwhm=1):
         y = x[:,tf.newaxis]
         x0 = centre[0] - 0.5
         y0 = centre[1] - 0.5
-        unnorm = tf.exp(-4*tf.compat.v1.log(2.) * ((x-x0)**2 + (y-y0)**2) / fwhm**2)[:size[0],:size[1]]
+        unnorm = tf.exp(-4*tf.log(2.) * ((x-x0)**2 + (y-y0)**2) / fwhm**2)[:size[0],:size[1]]
         norm = unnorm / tf.reduce_sum(unnorm)
         return norm
 
