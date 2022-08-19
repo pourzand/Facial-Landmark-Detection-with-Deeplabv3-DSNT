@@ -238,6 +238,9 @@ def deeplabv3_plus(input_shape=(96,96,1),out_stride=16,num_classes=15):
 	x=BilinearUpsampling((4,4))(x)
 	x = Activation("sigmoid",name='last')(x)
 	
+	# x = tf.keras.layers.Cropping2D(cropping=((5, 5), (5, 5)),name="crop")(x)
+
+	
 	print("----------------")
 	print("final shape of deeplab model {}".format(x.shape))
 	print("----------------")
